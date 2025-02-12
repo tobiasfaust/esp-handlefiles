@@ -1,5 +1,6 @@
 import os
 import shutil
+Import("projenv")
 
 def copy_data_files(source_dir, target_dir):
     if not os.path.exists(source_dir):
@@ -20,14 +21,13 @@ def copy_data_files(source_dir, target_dir):
         else:
             shutil.copy2(s, d)
 
-def main():
-    # Define the source and target directories
-    print("start copy data files")
-    source_dir = os.path.join(os.path.dirname(__file__), "data")
-    target_dir = os.path.join(os.getcwd(), "data")
 
-    # Copy the files
-    copy_data_files(source_dir, target_dir)
+#print("Env: " + str(projenv.Dump()))
 
-if __name__ == "__main__":
-    main()
+# Define the source and target directories
+source_dir = os.path.join(os.path.dirname(os.getcwd()), "data")
+target_dir = os.path.join(projenv["PROJECT_DIR"], "data")
+
+
+# Copy the files
+copy_data_files(source_dir, target_dir)

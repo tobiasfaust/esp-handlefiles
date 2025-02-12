@@ -29,5 +29,7 @@
   ],
   "frameworks": "arduino",
   "platforms": ["espressif32", "espressif8266"],
-  "extraScript": "scripts/copy_data_files.py"
+  "build": {
+      "extraScript": "copy_data_files.py"
+  }
 }

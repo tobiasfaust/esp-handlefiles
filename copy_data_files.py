@@ -22,6 +22,7 @@ def copy_data_files(source_dir, target_dir):
 
 def main():
     # Define the source and target directories
+    print("start copy data files")
     source_dir = os.path.join(os.path.dirname(__file__), "data")
     target_dir = os.path.join(os.getcwd(), "data")
 

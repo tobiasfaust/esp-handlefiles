@@ -1,0 +1,27 @@
+{
+  "name": "ESP-HandleFiles",
+  "version": "0.1.0",
+  "description": "Handling files on ESP32 and ESP8266 stored on SPIFFS/LittleFS",
+  "keywords": ["esp32", "esp8266"],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/tobiasfaust/esp-handlefiles"
+  },
+  "authors": [
+    {
+      "name": "Tobias Faust",
+      "email": "tobias.faust@gmx.net"
+    }
+  ],
+  "dependencies": [
+    {
+      "owner": "mathieucarbou",
+      "name": "ESPAsyncWebServer",
+      "version": "*",
+      "platforms": ["espressif8266", "espressif32"]
+    }
+  ],
+  "frameworks": "arduino",
+  "platforms": ["espressif32", "espressif8266"],
+  "extraScript": "script/copy_data_files.py"
+}

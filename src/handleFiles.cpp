@@ -23,14 +23,14 @@ void handleFiles::registerLogCallback(void (*logCallback)(const int loglevel, co
 //###############################################################
 // returns the complete folder structure
 //###############################################################
-void handleFiles::getDirList(JsonArray* json, String path) {
+void handleFiles::getDirList(JsonArray json, String path) {
   JsonDocument doc;
   JsonObject jsonRoot = doc.to<JsonObject>();
 
   jsonRoot["path"] = path;
   JsonArray content = jsonRoot["content"].to<JsonArray>();
 
-  File FSroot = LittleFS.open(path, "r");
+  File FSroot = LittleFS.open(path);
   File file = FSroot.openNextFile();
 
   while (file) {
@@ -53,60 +53,48 @@ void handleFiles::getDirList(JsonArray* json, String path) {
     file = FSroot.openNextFile();
   }
   FSroot.close();
-  json->add(jsonRoot);
+  json.add(jsonRoot);
 }
 
 //###############################################################
-// returns the requested data via AJAX from Webserver.cpp
+// returns the requested data from Webserver.cpp
 //###############################################################
-void handleFiles::HandleAjaxRequest(JsonDocument& jsonGet, AsyncResponseStream* response) {
+void handleFiles::HandleRequest(JsonDocument& json) {
   String subaction = "";
-  if (jsonGet["subaction"])  {subaction  = jsonGet["subaction"].as<String>();}
+  if (json["cmd"]["subaction"])  {subaction  = json["cmd"]["subaction"].as<String>();}
 
   if (logCallback) {
-    logCallback(3, "handle Ajax Request in handleFiles.cpp: %s", subaction.c_str());
+    logCallback(3, "handle Request in handleFiles.cpp: %s", subaction.c_str());
   }
 
   if (subaction == "listDir") {
-    JsonDocument doc;
-    JsonArray content = doc.add<JsonArray>();
+    JsonArray content = json["JS"]["listdir"].to<JsonArray>();
     
-    this->getDirList(&content, "/");
-    String ret("");
-    serializeJson(content, ret);
+    this->getDirList(content, "/");
     if (logCallback) {
-      String jsonString;
-      serializeJson(content, jsonString);
-      logCallback(5, jsonString.c_str());
+      logCallback(5, json["content"].as<String>().c_str());
     }
 
-    response->print(ret);   
   } else if (subaction == "deleteFile") {
-    String filename(""), ret("");
-    JsonDocument jsonReturn;
+    String filename("");
 
     if (logCallback) {
       logCallback(3, "Request to delete file %s", filename.c_str());
     }
 
-    if (jsonGet["filename"])  {filename  = jsonGet["filename"].as<String>();}
+    if (json["cmd"]["filename"])  {filename  = json["cmd"]["filename"].as<String>();}
     
     if (LittleFS.remove(filename)) { 
-      jsonReturn["response_status"] = 1;
-      jsonReturn["response_text"] = "deletion successful";
+      json["response"]["status"] = 1;
+      json["response"]["text"] = "deletion successful";
     } else {
-      jsonReturn["response_status"] = 0;
-      jsonReturn["response_text"] = "deletion failed";
+      json["response"]["status"] = 0;
+      json["response"]["text"] = "deletion failed";
     }
     
     if (logCallback) {
-      String jsonString;
-      serializeJson(jsonReturn, jsonString);
-      logCallback(3, jsonString.c_str());
+      logCallback(3, json.as<String>().c_str());
     }
-
-    serializeJson(jsonReturn, ret);
-    response->print(ret);
   }
 }
 

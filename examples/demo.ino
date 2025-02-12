@@ -8,7 +8,7 @@ AsyncWebServer server(80);
 handleFiles* fsfiles = new handleFiles(&server);
 
 void setup() {
-    // Initialize serial communication at 9600 bits per second
+    // Initialize serial communication
     Serial.begin(115200);
     
     // Print a message to the serial monitor
@@ -22,6 +22,7 @@ void setup() {
     }
     Serial.println("Connected to the WiFi network");
 
+    server.serveStatic("/", LittleFS, "/");
     server.begin();
 }
 

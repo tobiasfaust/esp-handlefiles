@@ -112,8 +112,9 @@ void handleFiles::handleUpload(AsyncWebServerRequest *request, String filename, 
     String path = "";
     for (int i = 0; i < filename.length(); i++) {
       if (filename[i] == '/') {
-      if (!LittleFS.exists(path)) {
-        LittleFS.mkdir(path);
+        if (!LittleFS.exists(path)) {
+          LittleFS.mkdir(path);
+        }
       }
       path += filename[i];
     }

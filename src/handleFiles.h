@@ -8,7 +8,6 @@
 #endif
 
 #include <WiFi.h> 
-#include <AsyncTCP.h>
 #include <LittleFS.h>
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>

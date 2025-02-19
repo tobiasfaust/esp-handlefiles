@@ -68,8 +68,8 @@ export function connectWebSocket() {
     return;
   }
 
-  //ws = new WebSocket(location.origin.replace(/^http/, 'ws') + '/ajaxws');
-  ws = new WebSocket('ws://192.168.10.253/ajaxws'); 
+  ws = new WebSocket(location.origin.replace(/^http/, 'ws') + '/ajaxws');
+  //ws = new WebSocket('ws://192.168.10.253/ajaxws'); 
   var wsStatus = document.getElementById('ws-status');
 
   ws.onopen = function() {

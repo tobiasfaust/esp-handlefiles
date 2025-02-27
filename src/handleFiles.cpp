@@ -16,8 +16,23 @@ handleFiles::handleFiles(AsyncWebServer *server) {
  * @brief Register a callback function for logging
  * @param logCallback: Callback function pointer
  */
-void handleFiles::registerLogCallback(void (*logCallback)(const int loglevel, const char* format, ...)) {
+void handleFiles::registerLogCallback(std::function<void(int, const char*, va_list)> logCallback) {
   this->logCallback = logCallback;
+}
+
+/***************************************
+ * @brief Wrapper function for logging to pass the log messages to the callback function
+ * @param loglevel: Log level
+ * @param format: Format string
+ * @param ...: Variable arguments
+ */
+void handleFiles::log(int loglevel, const char* format, ...) {
+  if (logCallback) {
+    va_list args;
+    va_start(args, format);
+    logCallback(loglevel, format, args);
+    va_end(args);
+  }
 }
 
 //###############################################################
@@ -63,24 +78,18 @@ void handleFiles::HandleRequest(JsonDocument& json) {
   String subaction = "";
   if (json["cmd"]["subaction"])  {subaction  = json["cmd"]["subaction"].as<String>();}
 
-  if (logCallback) {
-    logCallback(3, "handle Request in handleFiles.cpp: %s", subaction.c_str());
-  }
+  this->log(3, "handle Request in handleFiles.cpp: %s", subaction.c_str());
 
   if (subaction == "listDir") {
     JsonArray content = json["JS"]["listdir"].to<JsonArray>();
     
     this->getDirList(content, "/");
-    if (logCallback) {
-      logCallback(5, json["content"].as<String>().c_str());
-    }
+    this->log(5, json["content"].as<String>().c_str());
 
   } else if (subaction == "deleteFile") {
     String filename("");
 
-    if (logCallback) {
-      logCallback(3, "Request to delete file %s", filename.c_str());
-    }
+    this->log(3, "Request to delete file %s", filename.c_str());
 
     if (json["cmd"]["filename"])  {filename  = json["cmd"]["filename"].as<String>();}
     
@@ -92,9 +101,7 @@ void handleFiles::HandleRequest(JsonDocument& json) {
       json["response"]["text"] = "deletion failed";
     }
     
-    if (logCallback) {
-      logCallback(3, json.as<String>().c_str());
-    }
+    this->log(3, json.as<String>().c_str());
   }
 }
 
@@ -103,42 +110,24 @@ void handleFiles::HandleRequest(JsonDocument& json) {
 //###############################################################
 void handleFiles::handleUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
   
-  if (logCallback) {
-    logCallback(5, "Client: %s %s", request->client()->remoteIP().toString().c_str(), request->url().c_str());;
-  }
+  this->log(5, "Client: %s %s", request->client()->remoteIP().toString().c_str(), request->url().c_str());;
 
   if (!index) {
     // open the file on first call and store the file handle in the request object
-    String path = "";
-    for (int i = 0; i < filename.length(); i++) {
-      if (filename[i] == '/') {
-        if (!LittleFS.exists(path)) {
-          LittleFS.mkdir(path);
-        }
-      }
-      path += filename[i];
-    }
-    
     request->_tempFile = LittleFS.open(filename, "w");
-    if (logCallback) {
-      logCallback(5, "Upload Start: %s", filename.c_str());
-    }
+    this->log(5, "Upload Start: %s", filename.c_str());
   }
 
   if (len) {
     // stream the incoming chunk to the opened file
     request->_tempFile.write(data, len);
-    if (logCallback) {
-      logCallback(5, "Writing file: %s ,index=%d len=%d bytes, FreeMem: %d", filename.c_str(), index, len, ESP.getFreeHeap());
-    }
+    this->log(5, "Writing file: %s ,index=%d len=%d bytes, FreeMem: %d", filename.c_str(), index, len, ESP.getFreeHeap());
   }
 
   if (final) {
     // close the file handle as the upload is now done
     request->_tempFile.close();
-    if (logCallback) {
-      logCallback(3, "Upload Complete: %s ,size: %d Bytes", filename.c_str(), (index + len));
-    }
+    this->log(3, "Upload Complete: %s ,size: %d Bytes", filename.c_str(), (index + len));
 
     AsyncResponseStream *response = request->beginResponseStream("text/json");
     response->addHeader("Server","ESP Async Web Server");
@@ -156,7 +145,7 @@ void handleFiles::handleUpload(AsyncWebServerRequest *request, String filename, 
     if (logCallback) {
       String jsonString;
       serializeJson(jsonReturn, jsonString);
-      logCallback(5, jsonString.c_str());
+      this->log(5, jsonString.c_str());
     }
   }
 }

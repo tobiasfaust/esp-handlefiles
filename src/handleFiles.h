@@ -18,11 +18,13 @@ class handleFiles {
 
         void        HandleRequest(JsonDocument& json);
         void        handleUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final);
-        void        registerLogCallback(void (*logCallback)(const int loglevel, const char* format, ...));
+        void        registerLogCallback(std::function<void(int, const char*, va_list)> logCallback);
 
     private:
         void        getDirList(JsonArray json, String path);
-        void (*logCallback)(const int loglevel, const char* format, ...) = nullptr; // Callback function pointer
+        void        log(int loglevel, const char* format, ...);
+        
+        std::function<void(int, const char*, va_list)> logCallback; // Callback function pointer
 };
 
 #endif

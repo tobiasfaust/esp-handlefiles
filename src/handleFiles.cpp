@@ -114,6 +114,16 @@ void handleFiles::handleUpload(AsyncWebServerRequest *request, String filename, 
 
   if (!index) {
     // open the file on first call and store the file handle in the request object
+    String path = "";
+    for (int i = 0; i < filename.length(); i++) {
+      if (filename[i] == '/') {
+        if (!LittleFS.exists(path)) {
+          LittleFS.mkdir(path);
+        }
+      }
+      path += filename[i];
+    }
+    
     request->_tempFile = LittleFS.open(filename, "w");
     this->log(5, "Upload Start: %s", filename.c_str());
   }

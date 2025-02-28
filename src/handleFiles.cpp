@@ -45,7 +45,7 @@ void handleFiles::getDirList(JsonArray json, String path) {
   jsonRoot["path"] = path;
   JsonArray content = jsonRoot["content"].to<JsonArray>();
 
-  File FSroot = LittleFS.open(path);
+  File FSroot = LittleFS.open(path, 'r');
   File file = FSroot.openNextFile();
 
   while (file) {

@@ -45,7 +45,7 @@ void handleFiles::getDirList(JsonArray json, String path) {
   jsonRoot["path"] = path;
   JsonArray content = jsonRoot["content"].to<JsonArray>();
 
-  File FSroot = LittleFS.open(path, 'r');
+  File FSroot = LittleFS.open(path, "r");
   File file = FSroot.openNextFile();
 
   while (file) {
@@ -115,7 +115,7 @@ void handleFiles::handleUpload(AsyncWebServerRequest *request, String filename, 
   if (!index) {
     // open the file on first call and store the file handle in the request object
     String path = "";
-    for (int i = 0; i < filename.length(); i++) {
+    for (unsigned int i = 0; i < filename.length(); i++) {
       if (filename[i] == '/') {
         if (!LittleFS.exists(path)) {
           LittleFS.mkdir(path);

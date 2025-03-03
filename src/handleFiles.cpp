@@ -16,7 +16,7 @@ handleFiles::handleFiles(AsyncWebServer *server) {
  * @brief Register a callback function for logging
  * @param logCallback: Callback function pointer
  */
-void handleFiles::registerLogCallback(std::function<void(int, const char*, va_list)> logCallback) {
+void handleFiles::registerLogCallback(std::function<void(int, const char*)> logCallback) {
   this->logCallback = logCallback;
 }
 
@@ -30,7 +30,9 @@ void handleFiles::log(int loglevel, const char* format, ...) {
   if (logCallback) {
     va_list args;
     va_start(args, format);
-    logCallback(loglevel, format, args);
+    char buffer[256];
+    vsnprintf(buffer, sizeof(buffer), format, args);
+    logCallback(loglevel, buffer);
     va_end(args);
   }
 }

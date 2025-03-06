@@ -7,7 +7,12 @@
   #include "WProgram.h"
 #endif
 
-#include <WiFi.h> 
+#ifdef ESP8266
+  #include <ESP8266WiFi.h>
+#else
+  #include <WiFi.h>
+#endif
+
 #include <LittleFS.h>
 #include <ESPAsyncWebServer.h>
 #include <ArduinoJson.h>

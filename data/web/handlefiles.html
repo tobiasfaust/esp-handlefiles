@@ -13,13 +13,14 @@
     <script language='javascript' type='text/javascript' src='https://cdn.jsdelivr.net/gh/eligrey/FileSaver.js@master/dist/FileSaver.js'></script>
     
     <script type='module'>
-      import { init, listFiles, downloadFile, uploadFile, deleteFile, fetchFile, backup } from './handlefiles.js';
+      import { init, listFiles, downloadFile, uploadFile, deleteFile, fetchFile, backup, handleZipUpload } from './handlefiles.js';
       window.downloadFile = downloadFile;
       window.uploadFile = uploadFile;
       window.deleteFile = deleteFile;
       window.fetchFile = fetchFile;
       window.listFiles = listFiles;
       window.backup = backup;
+      window.handleZipUpload = handleZipUpload;
 
       window.addEventListener('DOMContentLoaded', init, false);
     </script>
@@ -68,8 +69,13 @@
             <button type='button' onclick='downloadFile()'style='font-size:18px' class='fa' title='download to pc'>&#xf019</button>
             <button onclick='uploadFile()' style='font-size:18px' class='fa' title='store it'>&#xf0c7</button>
             <button onclick="document.getElementById('confirmDeleteFile').classList.remove('hide')" style='font-size:18px' class='fa' title='delete it'>&#xf014</button>
-            <button onclick='backup()' style='font-size:18px' class='fa' title='backup complete filesystem as zip'>&#xf1c6</button>
+            <button onclick='backup()' style='font-size:18px' class='fa' title='backup configuration as zip'>&#xf1c6</button>
             <span id='response'></span>
+            
+            <div style="float: right;">
+            <input type="file" id="zipFileInput" accept=".zip" title="Bitte wählen Sie eine Datei aus">
+            <button type="button" style="font-size:18px" class="fa" title="upload zip file" onclick="handleZipUpload({target: document.getElementById('zipFileInput')})">&#xf093;</button>
+            </div>
           </td>
         </tr>
       </tbody>

@@ -14,6 +14,7 @@
     
     <script type='module'>
       import { init, listFiles, downloadFile, uploadFile, deleteFile, fetchFile, backup, handleZipUpload } from './handlefiles.js';
+      import { initExternalSite } from './navi.js';
       window.downloadFile = downloadFile;
       window.uploadFile = uploadFile;
       window.deleteFile = deleteFile;
@@ -21,8 +22,11 @@
       window.listFiles = listFiles;
       window.backup = backup;
       window.handleZipUpload = handleZipUpload;
-
+      window.initExternalSite = initExternalSite;
+      
       window.addEventListener('DOMContentLoaded', init, false);
+      window.addEventListener('DOMContentLoaded', () => initExternalSite(document), false);
+
     </script>
 
     <title>HandleFiles</title>
@@ -70,11 +74,11 @@
             <button onclick='uploadFile()' style='font-size:18px' class='fa' title='store it'>&#xf0c7</button>
             <button onclick="document.getElementById('confirmDeleteFile').classList.remove('hide')" style='font-size:18px' class='fa' title='delete it'>&#xf014</button>
             <button onclick='backup()' style='font-size:18px' class='fa' title='backup configuration as zip'>&#xf1c6</button>
-            <span id='response'></span>
             
+
             <div style="float: right;">
-            <input type="file" id="zipFileInput" accept=".zip" title="Bitte wählen Sie eine Datei aus">
-            <button type="button" style="font-size:18px" class="fa" title="upload zip file" onclick="handleZipUpload({target: document.getElementById('zipFileInput')})">&#xf093;</button>
+              <input type="file" id="zipFileInput" accept=".zip" title="Bitte wählen Sie eine Datei aus">
+              <button type="button" style="font-size:18px" class="fa" title="upload zip file" onclick="handleZipUpload({target: document.getElementById('zipFileInput')})">&#xf093;</button>
             </div>
           </td>
         </tr>
@@ -86,11 +90,6 @@
       <button class="button" onclick='deleteFile()'>Confirm</button>
     </div>
     <p></p>
-    <div style="position: fixed; bottom: 0; width: 100%; height: 20px; background-color: lightblue; text-align: center;">
-      <div style="font-size: 10px; float: right;">
-        Connection Status:
-        <span id="ws-status" style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background-color: red; margin-right: 25px; margin-top: 7px;"></span>
-      </div>
-    </div>
+    <div id="footer"></div>    
   </body>
 </html>

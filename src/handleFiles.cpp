@@ -13,6 +13,71 @@ handleFiles::handleFiles(AsyncWebServer *server) {
 }  
 
 /**************************************
+ * @brief Register a LittleFS Filesystem instance
+ * @param fs: Pointer to the LittleFS instance to register
+ * @param basePath: Base path for the filesystem (default is "/")
+ */
+void handleFiles::registerLittleFS(fs::LittleFSFS* fs , String basePath) {
+  if (fs == nullptr) {
+    log(1, "handleFiles::registerLittleFS: fs pointer is null");
+    return;
+  }
+
+  // Check if the filesystem is already registered
+  for (const auto& instance : littleFSVector) {
+    if (instance.fs == fs) {
+      log(2, "handleFiles::registerLittleFS: Filesystem already registered");
+      return;
+    }
+  }
+
+  // Add the new filesystem instance to the vector
+  LittleFSInstance newInstance = {fs, basePath};
+  littleFSVector.push_back(newInstance);
+  log(3, "handleFiles::registerLittleFS: Filesystem registered with base path: %s", basePath.c_str());
+} 
+
+/*************************************
+ * @brief Get the LittleFS pointer for a given path
+ * @param path: The path to check
+ * @return Pointer to the LittleFS instance or nullptr if not found
+ */
+fs::LittleFSFS* handleFiles::getFSPtr(const char* path) {
+  if (littleFSVector.empty()) {
+    return &LittleFS;
+  }
+
+  // Find the LittleFS instance that matches the given path
+  for (const auto& instance : littleFSVector) {
+    if (String(path).startsWith(instance.basePath)) {
+      log(4, "handleFiles::getFSPtr: Found matching LittleFS instance for path: %s", path);
+      // Return the pointer to the matching LittleFS instance
+      return instance.fs;
+    }
+  }
+  // If no matching instance is found, return the default LittleFS instance
+  log(2, "handleFiles::getFSPtr: No matching LittleFS instance found for path: %s", path);
+  return &LittleFS;
+}
+
+/*************************************
+ * @brief Get the true filename for a given LittleFS instance and filename
+ * @param fs: Pointer to the LittleFS instance
+ * @param filename: The filename to check
+ * @return The true filename without the base path
+ */
+String handleFiles::getFsFilePath(fs::LittleFSFS* fs, String filename) {
+  for (const auto& instance : littleFSVector) {
+    if (instance.fs == fs) {
+      if (filename.startsWith(instance.basePath)) {
+        return filename.substring(instance.basePath.length());
+      }
+    }
+  }
+  return filename;
+}
+
+/**************************************
  * @brief Register a callback function for logging
  * @param logCallback: Callback function pointer
  */
@@ -47,7 +112,7 @@ void handleFiles::getDirList(JsonArray json, String path) {
   jsonRoot["path"] = path;
   JsonArray content = jsonRoot["content"].to<JsonArray>();
 
-  File FSroot = LittleFS.open(path, "r");
+  File FSroot = this->getFSPtr(path.c_str())->open(path, "r");
   File file = FSroot.openNextFile();
 
   while (file) {
@@ -85,17 +150,38 @@ void handleFiles::HandleRequest(JsonDocument& json) {
   if (subaction == "listDir") {
     JsonArray content = json["JS"]["listdir"].to<JsonArray>();
     
-    this->getDirList(content, "/");
+    if (littleFSVector.empty()) {
+      this->getDirList(content, "/");
+    } else {
+      //start with root for all basepath of registered LittleFS instances
+      JsonObject fsroot = content.add<JsonObject>();
+      fsroot["path"] = "/";
+      JsonArray rootcontent = fsroot["content"].to<JsonArray>();
+
+      for (const auto& instance : littleFSVector) {
+        JsonObject jsonObj = rootcontent.add<JsonObject>();
+        String fname(instance.basePath.substring(1));
+        jsonObj["name"] = fname;
+        jsonObj["isDir"] = 1; // mark as directory
+      }
+
+      for (const auto& instance : littleFSVector) {
+        this->getDirList(content, instance.basePath);
+      }
+    }
+
     this->log(5, json["content"].as<String>().c_str());
 
   } else if (subaction == "deleteFile") {
     String filename("");
-
     this->log(3, "Request to delete file %s", filename.c_str());
 
     if (json["cmd"]["filename"])  {filename  = json["cmd"]["filename"].as<String>();}
     
-    if (LittleFS.remove(filename)) { 
+    fs::LittleFSFS* fs = this->getFSPtr(filename.c_str());
+    filename = this->getFsFilePath(fs, filename);
+    
+    if (fs->remove(filename)) { 
       json["response"]["status"] = 1;
       json["response"]["text"] = "deletion successful";
     } else {
@@ -113,20 +199,23 @@ void handleFiles::HandleRequest(JsonDocument& json) {
 void handleFiles::handleUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
   
   this->log(5, "Client: %s %s", request->client()->remoteIP().toString().c_str(), request->url().c_str());;
+  fs::LittleFSFS* fs = this->getFSPtr(filename.c_str());
 
   if (!index) {
     // open the file on first call and store the file handle in the request object
     String path = "";
     for (unsigned int i = 0; i < filename.length(); i++) {
       if (filename[i] == '/') {
-        if (!LittleFS.exists(path)) {
-          LittleFS.mkdir(path);
+        if (!fs->exists(path)) { 
+          fs->mkdir(path);
         }
       }
       path += filename[i];
     }
+
+    filename = this->getFsFilePath(fs, filename);  
     
-    request->_tempFile = LittleFS.open(filename, "w");
+    request->_tempFile = fs->open(filename, "w");
     this->log(5, "Upload Start: %s", filename.c_str());
   }
 

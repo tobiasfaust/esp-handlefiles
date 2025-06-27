@@ -68,7 +68,7 @@ fs::LittleFSFS* handleFiles::getFSPtr(const char* path) {
  */
 String handleFiles::getFsFilePath(fs::LittleFSFS* fs, String filename) {
   for (const auto& instance : littleFSVector) {
-    if (instance.fs == fs) {
+    if (instance.fs == fs && instance.basePath != "/") {
       if (filename.startsWith(instance.basePath)) {
         return filename.substring(instance.basePath.length());
       }
@@ -144,8 +144,6 @@ void handleFiles::getDirList(JsonArray json, String path) {
 void handleFiles::HandleRequest(JsonDocument& json) {
   String subaction = "";
   if (json["cmd"]["subaction"])  {subaction  = json["cmd"]["subaction"].as<String>();}
-
-  this->log(3, "handle Request in handleFiles.cpp: %s", subaction.c_str());
 
   if (subaction == "listDir") {
     JsonArray content = json["JS"]["listdir"].to<JsonArray>();

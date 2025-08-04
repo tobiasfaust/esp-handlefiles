@@ -38,6 +38,7 @@ class handleFiles {
         void        log(int loglevel, const char* format, ...);
         fs::LittleFSFS* getFSPtr(const char* path);
         String      getFsFilePath(fs::LittleFSFS* fs, String filename); // return the true filename of given fs-path
+        bool        deleteFolderRecursive(fs::LittleFSFS* fs, String folder);
 
         std::function<void(int, const char*)> logCallback; // Callback function pointer
         std::vector<LittleFSInstance> littleFSVector;

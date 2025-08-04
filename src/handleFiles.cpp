@@ -123,7 +123,7 @@ void handleFiles::getDirList(JsonArray json, LittleFSInstance* myfs, String path
     JsonObject jsonObj = doc1.to<JsonObject>();
     String fname(file.name());
     jsonObj["name"] = fname;
-    this->log(5, "[getDirList] fs: %s -> filename: %s", myfs->basePath, fname.c_str());
+    
     if(file.isDirectory()){    
         jsonObj["isDir"] = 1;
         String p = path + "/" + fname;
@@ -192,7 +192,113 @@ void handleFiles::HandleRequest(JsonDocument& json) {
     }
     
     this->log(3, json.as<String>().c_str());
+  
+  
+  } else if (subaction == "deleteFolder") {
+    String foldername("");
+    this->log(3, "Request to delete folder %s", foldername.c_str());
+
+    if (json["cmd"]["foldername"])  {foldername  = json["cmd"]["foldername"].as<String>();}
+    
+    fs::LittleFSFS* fs = this->getFSPtr(foldername.c_str());
+    foldername = this->getFsFilePath(fs, foldername);
+    
+    if (this->deleteFolderRecursive(fs, foldername)) { 
+      json["response"]["status"] = 1;
+      json["response"]["text"] = "deletion successful";
+    } else {
+      json["response"]["status"] = 0;
+      json["response"]["text"] = "deletion failed";
+    }
+    
+    this->log(3, json.as<String>().c_str());
+  
+  } else if (subaction == "addFolder") {
+    String foldername("");
+    this->log(3, "Request to add folder %s", foldername.c_str());
+
+    if (json["cmd"]["foldername"])  {foldername  = json["cmd"]["foldername"].as<String>();}
+    
+    fs::LittleFSFS* fs = this->getFSPtr(foldername.c_str());
+    foldername = this->getFsFilePath(fs, foldername);
+    
+    if (fs->exists(foldername)) {
+      json["response"]["status"] = 0;
+      json["response"]["text"] = "folder already exists";
+      this->log(2, "Folder already exists: %s", foldername.c_str());
+      return;
+    }
+
+    if (fs->mkdir(foldername)) { 
+      json["response"]["status"] = 1;
+      json["response"]["text"] = "folder created successfully";
+      this->log(3, "Folder created successfully: %s", foldername.c_str());
+    } else {
+      json["response"]["status"] = 0;
+      json["response"]["text"] = "folder creation failed";
+      this->log(2, "Failed to create folder: %s", foldername.c_str());
+    }
+
+  } else {
+    json["response"]["status"] = 0;
+    json["response"]["text"] = "unknown subaction";
   }
+
+
+}
+
+/**
+ * @brief Recursively deletes all files and folders under the given folder, then deletes the folder itself.
+ * @param fs Pointer to the LittleFS instance
+ * @param folder The folder path to delete
+ * @return true if successful, false otherwise
+ */
+bool handleFiles::deleteFolderRecursive(fs::LittleFSFS* fs, String folder) {
+  if (!fs->exists(folder)) {
+    this->log(2, "deleteFolderRecursive: Folder does not exist: %s", folder.c_str());
+    return false;
+  }
+
+  File dir = fs->open(folder, "r");
+  if (!dir || !dir.isDirectory()) {
+    this->log(2, "deleteFolderRecursive: Not a directory: %s", folder.c_str());
+    return false;
+  }
+
+  File file = dir.openNextFile();
+  while (file) {
+    String path = String(folder) + "/" + String(file.name());
+    bool isDir = file.isDirectory();
+    file.close();
+    this->log(5, "deleteFolderRecursive: Processing file: %s", path.c_str());
+    if (isDir) {
+      this->log(5, "deleteFolderRecursive: Found directory, do a recurive call: %s", path.c_str());
+      // Recursive call for subdirectory
+      if (!deleteFolderRecursive(fs, path)) {
+        dir.close();
+        return false;
+      }
+    } else {
+      // Delete file
+      this->log(5, "deleteFolderRecursive: Deleting file: %s", path.c_str());
+      if (!fs->remove(path)) {
+        this->log(2, "deleteFolderRecursive: Failed to delete file: %s", path.c_str());
+        dir.close();
+        return false;
+      }
+    }
+    file = dir.openNextFile();
+  }
+  dir.close();
+
+  // Delete the folder itself
+  this->log(5, "deleteFolderRecursive: Deleting folder: %s", folder.c_str());
+  if (!fs->rmdir(folder)) {
+    this->log(2, "deleteFolderRecursive: Failed to delete folder: %s", folder.c_str());
+    return false;
+  }
+  this->log(3, "deleteFolderRecursive: Successfully deleted folder: %s", folder.c_str());
+  return true;
 }
 
 //###############################################################
@@ -202,6 +308,7 @@ void handleFiles::handleUpload(AsyncWebServerRequest *request, String filename, 
   
   this->log(5, "Client: %s %s", request->client()->remoteIP().toString().c_str(), request->url().c_str());
   fs::LittleFSFS* fs = this->getFSPtr(filename.c_str());
+  filename = this->getFsFilePath(fs, filename);
 
   if (!index) {
     // open the file on first call and store the file handle in the request object
@@ -215,8 +322,6 @@ void handleFiles::handleUpload(AsyncWebServerRequest *request, String filename, 
       path += filename[i];
     }
 
-    filename = this->getFsFilePath(fs, filename);  
-    
     request->_tempFile = fs->open(filename, "w");
     this->log(5, "Upload Start: %s", filename.c_str());
   }

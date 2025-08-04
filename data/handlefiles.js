@@ -268,6 +268,40 @@ export function deleteFile() {
   } else { global.setResponse(false, 'Filename is empty, Please define it.');}
 }
 
+// ************************************************
+export function deleteFolder() {
+  var pathOfFile = document.getElementById('path').innerHTML;
+  
+  if (pathOfFile != '/') {
+    var data = {};
+    data['cmd'] = {};
+    data['cmd']['action'] = 'handlefiles';
+    data['cmd']['subaction'] = "deleteFolder";
+    data['cmd']['foldername'] = pathOfFile;
+
+    global.setResponse(true, 'Please wait for deleting ...');
+    global.requestData(data);
+    GetInitData(getParentPath(pathOfFile));
+  } else { global.setResponse(false, 'You cannot delete the root folder.');}
+}
+
+// ************************************************
+export function addFolder(folderName) {
+  var pathOfFile = document.getElementById('path').innerHTML;
+
+  if (folderName != '') {
+    var data = {};
+    data['cmd'] = {};
+    data['cmd']['action'] = 'handlefiles';
+    data['cmd']['subaction'] = "addFolder";
+    data['cmd']['foldername'] = pathOfFile + '/' + folderName;
+
+    global.setResponse(true, 'Please wait for adding ...');
+    global.requestData(data);
+    GetInitData(pathOfFile);
+  } else { global.setResponse(false, 'Folder name is empty, Please define it.');}
+}
+
 // ***********************************
 // backup complete filesystem of ESP by zipfile
 //

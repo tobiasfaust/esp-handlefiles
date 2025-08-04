@@ -34,7 +34,7 @@ class handleFiles {
         void        registerLittleFS(fs::LittleFSFS* fs, String basePath = "/");
 
   private:
-        void        getDirList(JsonArray json, String path);
+        void        getDirList(JsonArray json, LittleFSInstance* fs, String path);
         void        log(int loglevel, const char* format, ...);
         fs::LittleFSFS* getFSPtr(const char* path);
         String      getFsFilePath(fs::LittleFSFS* fs, String filename); // return the true filename of given fs-path

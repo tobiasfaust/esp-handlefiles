@@ -50,7 +50,7 @@ fs::LittleFSFS* handleFiles::getFSPtr(const char* path) {
   // Find the LittleFS instance that matches the given path
   for (const auto& instance : littleFSVector) {
     if (String(path).startsWith(instance.basePath)) {
-      log(4, "handleFiles::getFSPtr: Found matching LittleFS instance for path: %s", path);
+      log(4, "handleFiles::getFSPtr: Found matching LittleFS instance for path '%s': %s", path, instance.basePath.c_str());
       // Return the pointer to the matching LittleFS instance
       return instance.fs;
     }
@@ -105,14 +105,17 @@ void handleFiles::log(int loglevel, const char* format, ...) {
 //###############################################################
 // returns the complete folder structure
 //###############################################################
-void handleFiles::getDirList(JsonArray json, String path) {
+void handleFiles::getDirList(JsonArray json, LittleFSInstance* myfs, String path) {
   JsonDocument doc;
   JsonObject jsonRoot = doc.to<JsonObject>();
 
-  jsonRoot["path"] = path;
+  String p1 = myfs->basePath + path;
+  if (p1.startsWith("//")) { p1 = p1.substring(1); }
+  if (p1.endsWith("/")) { p1 = p1.substring(0, p1.length() - 1); }
+  jsonRoot["path"] = p1;
   JsonArray content = jsonRoot["content"].to<JsonArray>();
 
-  File FSroot = this->getFSPtr(path.c_str())->open(path, "r");
+  File FSroot = myfs->fs->open(path, "r");
   File file = FSroot.openNextFile();
 
   while (file) {
@@ -120,12 +123,12 @@ void handleFiles::getDirList(JsonArray json, String path) {
     JsonObject jsonObj = doc1.to<JsonObject>();
     String fname(file.name());
     jsonObj["name"] = fname;
-
+    this->log(5, "[getDirList] fs: %s -> filename: %s", myfs->basePath, fname.c_str());
     if(file.isDirectory()){    
         jsonObj["isDir"] = 1;
         String p = path + "/" + fname;
         if (p.startsWith("//")) { p = p.substring(1); }
-        this->getDirList(json, p); // recursive call
+        this->getDirList(json, myfs, p); // recursive call
     } else {
       jsonObj["isDir"] = 0;
     }
@@ -149,7 +152,9 @@ void handleFiles::HandleRequest(JsonDocument& json) {
     JsonArray content = json["JS"]["listdir"].to<JsonArray>();
     
     if (littleFSVector.empty()) {
-      this->getDirList(content, "/");
+      // If no LittleFS instances are registered, list the root directory of the default LittleFS
+      LittleFSInstance defaultInstance = {&LittleFS, "/"};
+      this->getDirList(content, &defaultInstance, "/");
     } else {
       //start with root for all basepath of registered LittleFS instances
       JsonObject fsroot = content.add<JsonObject>();
@@ -164,11 +169,10 @@ void handleFiles::HandleRequest(JsonDocument& json) {
       }
 
       for (const auto& instance : littleFSVector) {
-        this->getDirList(content, instance.basePath);
+        log(5, "handleFiles::HandleRequest: Listing directory for LittleFS instance with base path: %s", instance.basePath.c_str());
+        this->getDirList(content, const_cast<LittleFSInstance*>(&instance), "/");
       }
     }
-
-    this->log(5, json["content"].as<String>().c_str());
 
   } else if (subaction == "deleteFile") {
     String filename("");
@@ -196,7 +200,7 @@ void handleFiles::HandleRequest(JsonDocument& json) {
 //###############################################################
 void handleFiles::handleUpload(AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
   
-  this->log(5, "Client: %s %s", request->client()->remoteIP().toString().c_str(), request->url().c_str());;
+  this->log(5, "Client: %s %s", request->client()->remoteIP().toString().c_str(), request->url().c_str());
   fs::LittleFSFS* fs = this->getFSPtr(filename.c_str());
 
   if (!index) {

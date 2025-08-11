@@ -111,7 +111,7 @@ void handleFiles::getDirList(JsonArray json, LittleFSInstance* myfs, String path
 
   String p1 = myfs->basePath + path;
   if (p1.startsWith("//")) { p1 = p1.substring(1); }
-  if (p1.endsWith("/")) { p1 = p1.substring(0, p1.length() - 1); }
+  if (p1 != "/" && p1.endsWith("/")) { p1 = p1.substring(0, p1.length() - 1); }
   jsonRoot["path"] = p1;
   JsonArray content = jsonRoot["content"].to<JsonArray>();
 

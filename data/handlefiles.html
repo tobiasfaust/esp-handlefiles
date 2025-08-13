@@ -14,7 +14,6 @@
     
     <script type='module'>
       import { init, listFiles, downloadFile, uploadFile, deleteFile, deleteFolder, addFolder, fetchFile, backup, handleZipUpload } from './handlefiles.js';
-      import { initExternalSite } from './navi.js';
       window.downloadFile = downloadFile;
       window.uploadFile = uploadFile;
       window.deleteFile = deleteFile;
@@ -24,10 +23,12 @@
       window.listFiles = listFiles;
       window.backup = backup;
       window.handleZipUpload = handleZipUpload;
-      window.initExternalSite = initExternalSite;
-      
-      window.addEventListener('DOMContentLoaded', () => initExternalSite(document), false);
       window.addEventListener('DOMContentLoaded', init, false);
+
+      import { initExternalSite } from './navi.js';
+      window.initExternalSite = initExternalSite;
+      window.addEventListener('DOMContentLoaded', () => initExternalSite(document), false);
+      
 
     </script>
 

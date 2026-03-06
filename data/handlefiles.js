@@ -67,6 +67,10 @@ function MyCallback(json) {
   listFiles(json["cmd"]["startpath"]);
 }
 
+try {
+  global.registerCallback('files_Callback', MyCallback);
+} catch(e) { console.error('Callback Registrierung fehlgeschlagen (handlefiles):', e); }
+
 // ************************************************
 // show content of fetched file 
 // ************************************************

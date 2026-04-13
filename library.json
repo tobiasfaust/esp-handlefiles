@@ -13,20 +13,6 @@
       "email": "tobias.faust@gmx.net"
     }
   ],
-  "dependencies": [
-    {
-      "owner": "ESP32Async",
-      "name": "ESPAsyncWebServer",
-      "version": "^3.6.0",
-      "platforms": ["espressif8266", "espressif32"]
-    },
-    {
-      "owner": "bblanchon",
-      "name": "ArduinoJson",
-      "version": ">=7.0.0",
-      "platforms": ["espressif8266", "espressif32"]
-    }
-  ],
   "frameworks": "arduino",
   "platforms": ["espressif32", "espressif8266"],
   "build": {
